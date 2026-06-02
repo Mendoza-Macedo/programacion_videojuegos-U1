@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
-
+using TMPro;
 namespace JuegoCooperativo.Personajes
 {
     [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
@@ -46,6 +46,21 @@ namespace JuegoCooperativo.Personajes
         public bool EstaAgarrado => estaAgarrado;
         public Rigidbody2D Cuerpo => cuerpo;
 
+
+
+        private static int coins;
+        public TMP_Text TextCoins;
+        private void OnTriggerEnter2D(Collider2D collision)
+        {
+            if (collision.CompareTag("Coin"))
+            {
+                Destroy(collision.gameObject);
+
+                coins++;
+
+                TextCoins.text = coins.ToString();
+            }
+        }
         private void Awake()
         {
             cuerpo = GetComponent<Rigidbody2D>();
