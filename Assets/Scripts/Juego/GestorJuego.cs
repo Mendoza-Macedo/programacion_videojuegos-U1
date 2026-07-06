@@ -13,7 +13,7 @@ namespace JuegoCooperativo.Juego
         [SerializeField] private Vector3 puntoReaparicionDos = new Vector3(1.2f, 1.5f, 0f);
         [SerializeField] private float separacionReaparicion = 1.2f;
         [SerializeField] private UnityEngine.UI.Text textoEstado;
-        [SerializeField] private string claveMejorTiempo = "MejorTiempoNivelSierra";
+        [SerializeField] private string claveMejorTiempo = "MejorTiempoNivel";
 
         private float tiempoInicio;
         private bool nivelTerminado;
@@ -23,36 +23,77 @@ namespace JuegoCooperativo.Juego
         private void Awake()
         {
             Instancia = this;
+            Time.timeScale = 1f;
             tiempoInicio = Time.time;
+
+            claveMejorTiempo = "MejorTiempo_" + SceneManager.GetActiveScene().name;
         }
 
         private void Update()
         {
-            if (KeyboardDisponibleReinicio())
+            var teclado = UnityEngine.InputSystem.Keyboard.current;
+
+            if (teclado != null && teclado.rKey.wasPressedThisFrame)
             {
-                Time.timeScale = 1f;
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                ReiniciarNivel();
+                return;
             }
 
-            if (textoEstado != null && !nivelTerminado)
+            if (nivelTerminado)
             {
-                float tiempo = Time.time - tiempoInicio;
-                float mejor = PlayerPrefs.GetFloat(claveMejorTiempo, 0f);
-                string textoMejor = mejor > 0f ? $"Mejor: {mejor:0.0}s" : "Mejor: --";
-                textoEstado.text = $"Tiempo: {tiempo:0.0}s  |  {textoMejor}\nEsc: Pausa  |  R: Reiniciar\nWASD/Shift: Azul  |  Flechas/ShiftDer: Rojo";
+                if (teclado != null && teclado.enterKey.wasPressedThisFrame)
+                {
+                    CargarSiguienteNivel();
+                }
+
+                return;
             }
+
+            ActualizarTextoEstado();
         }
 
-        private bool KeyboardDisponibleReinicio()
+        private void ActualizarTextoEstado()
         {
-            var teclado = UnityEngine.InputSystem.Keyboard.current;
-            return teclado != null && teclado.rKey.wasPressedThisFrame && Time.timeScale > 0f;
+            if (textoEstado == null) return;
+
+            float tiempo = Time.time - tiempoInicio;
+            float mejor = PlayerPrefs.GetFloat(claveMejorTiempo, 0f);
+            string textoMejor = mejor > 0f ? $"Mejor: {mejor:0.0}s" : "Mejor: --";
+
+            textoEstado.text =
+                $"Tiempo: {tiempo:0.0}s  |  {textoMejor}\n" +
+                "Esc: Pausa  |  R: Reiniciar\n" +
+                "WASD/Shift: Azul  |  Flechas/ShiftDer: Rojo";
+        }
+
+        private void ReiniciarNivel()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
+
+        private void CargarSiguienteNivel()
+        {
+            Time.timeScale = 1f;
+
+            int escenaActual = SceneManager.GetActiveScene().buildIndex;
+            int siguienteEscena = escenaActual + 1;
+
+            if (siguienteEscena < SceneManager.sceneCountInBuildSettings)
+            {
+                SceneManager.LoadScene(siguienteEscena);
+            }
+            else
+            {
+                SceneManager.LoadScene(0);
+            }
         }
 
         public void RegistrarPuntoControl(Vector3 centro)
         {
             puntoReaparicionUno = centro + Vector3.left * separacionReaparicion;
             puntoReaparicionDos = centro + Vector3.right * separacionReaparicion;
+
             MostrarMensajeTemporal("Punto de control guardado");
             JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirCheckpoint();
         }
@@ -61,6 +102,7 @@ namespace JuegoCooperativo.Juego
         {
             if (jugadorUno != null) jugadorUno.Teletransportar(puntoReaparicionUno);
             if (jugadorDos != null) jugadorDos.Teletransportar(puntoReaparicionDos);
+
             MostrarMensajeTemporal("Vuelvan a intentarlo");
             JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirDano();
             FindFirstObjectByType<JuegoCooperativo.Camara.CamaraCooperativa>()?.Sacudir(0.18f, 0.2f);
@@ -69,9 +111,12 @@ namespace JuegoCooperativo.Juego
         public void TerminarNivel()
         {
             if (nivelTerminado) return;
+
             nivelTerminado = true;
+
             float tiempo = Time.time - tiempoInicio;
             float mejorTiempo = PlayerPrefs.GetFloat(claveMejorTiempo, 0f);
+
             if (mejorTiempo <= 0f || tiempo < mejorTiempo)
             {
                 mejorTiempo = tiempo;
@@ -81,7 +126,11 @@ namespace JuegoCooperativo.Juego
 
             if (textoEstado != null)
             {
-                textoEstado.text = $"META ALCANZADA\nTiempo final: {tiempo:0.0}s\nR: Reiniciar";
+                textoEstado.text =
+                    "META ALCANZADA\n" +
+                    $"Tiempo final: {tiempo:0.0}s\n" +
+                    "ENTER: Siguiente nivel\n" +
+                    "R: Reiniciar";
             }
 
             JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirVictoria();
