@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
+using JuegoCooperativo.Animales;
+
 namespace JuegoCooperativo.Personajes
 {
     [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
@@ -33,6 +35,7 @@ namespace JuegoCooperativo.Personajes
         private Rigidbody2D cuerpo;
         private Collider2D colision;
         private SpriteRenderer sprite;
+        private AnimadorAnimalSierra animadorAnimal;
         private FixedJoint2D agarreActual;
         private float direccionHorizontal;
         private bool pidioSalto;
@@ -66,6 +69,7 @@ namespace JuegoCooperativo.Personajes
             cuerpo = GetComponent<Rigidbody2D>();
             colision = GetComponent<Collider2D>();
             sprite = GetComponent<SpriteRenderer>();
+            animadorAnimal = GetComponent<AnimadorAnimalSierra>();
 
             if (sprite != null)
             {
@@ -152,7 +156,7 @@ namespace JuegoCooperativo.Personajes
         {
             cuerpo.linearVelocity = new Vector2(cuerpo.linearVelocity.x, 0f);
             cuerpo.AddForce(Vector2.up * fuerzaSalto, ForceMode2D.Impulse);
-            JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirSalto();
+            JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirSalto(animadorAnimal?.NombreAnimalActual);
         }
 
         public void EmpujarHacia(Vector2 direccion)

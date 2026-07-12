@@ -1,4 +1,5 @@
 ﻿using JuegoCooperativo.Audio;
+using System.IO;
 using JuegoCooperativo.Cuerda;
 using JuegoCooperativo.Juego;
 using JuegoCooperativo.Mundo;
@@ -35,6 +36,41 @@ namespace JuegoCooperativo.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("Escenario principal recreado con assets reales.");
+        }
+
+        [MenuItem("Herramientas/BreadFred/Asignar audios del juego")]
+        public static void AsignarAudiosDelJuego()
+        {
+            foreach (string ruta in ObtenerEscenasDelJuego())
+            {
+                AsignarAudioEnEscena(ruta);
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("Audios del juego asignados.");
+        }
+
+        private static string[] ObtenerEscenasDelJuego()
+        {
+            var escenas = new System.Collections.Generic.List<string>();
+            if (Directory.Exists("Assets/Escenas")) escenas.AddRange(Directory.GetFiles("Assets/Escenas", "*.unity", SearchOption.AllDirectories));
+            if (Directory.Exists("Assets/Scenes")) escenas.AddRange(Directory.GetFiles("Assets/Scenes", "*.unity", SearchOption.AllDirectories));
+            return escenas.ToArray();
+        }
+
+        private static void AsignarAudioEnEscena(string ruta)
+        {
+            if (!File.Exists(ruta))
+            {
+                Debug.LogWarning("No se asignaron audios porque no existe la escena: " + ruta);
+                return;
+            }
+
+            var escena = EditorSceneManager.OpenScene(ruta);
+            CrearAudio();
+            EditorSceneManager.MarkSceneDirty(escena);
+            EditorSceneManager.SaveScene(escena, ruta);
         }
 
         private static void ActualizarEscena(string ruta)
@@ -371,7 +407,51 @@ namespace JuegoCooperativo.Editor
         {
             GameObject audio = Buscar("Sonidos del Juego") ?? new GameObject("Sonidos del Juego");
             if (audio.GetComponent<AudioSource>() == null) audio.AddComponent<AudioSource>();
-            if (audio.GetComponent<SonidosJuego>() == null) audio.AddComponent<SonidosJuego>();
+            SonidosJuego sonidos = audio.GetComponent<SonidosJuego>();
+            if (sonidos == null) sonidos = audio.AddComponent<SonidosJuego>();
+
+            SerializedObject so = new SerializedObject(sonidos);
+            so.FindProperty("musicaPrincipal").objectReferenceValue = CargarAudio("Assets/Audio/Music/MainSound.flac");
+            so.FindProperty("musicaBosque").objectReferenceValue = CargarAudio("Assets/Audio/Music/SoundTrackForest.wav");
+            so.FindProperty("musicaHielo").objectReferenceValue = CargarAudio("Assets/Audio/Music/SoundbackgroundIce.mp3");
+            so.FindProperty("volumenEfectos").floatValue = 1f;
+            so.FindProperty("saltoAlpaca").objectReferenceValue = CargarAudio("Assets/Audio/Player/JumpAlpaca.wav");
+            so.FindProperty("saltoCondor").objectReferenceValue = CargarAudio("Assets/Audio/Player/JumpCondor.wav");
+            so.FindProperty("saltoVicuna").objectReferenceValue = CargarAudio("Assets/Audio/Player/JumpVicuna.wav");
+            so.FindProperty("saltoVizcacha").objectReferenceValue = CargarAudio("Assets/Audio/Player/jumpVizcacha.wav");
+            so.FindProperty("checkpoint").objectReferenceValue = CargarAudio("Assets/Audio/Objet/SoundBandera.wav");
+            so.FindProperty("reinicio").objectReferenceValue = CargarAudio("Assets/Audio/Objet/RestartGame.wav");
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            AudioSource fuente = audio.GetComponent<AudioSource>();
+            fuente.playOnAwake = false;
+            fuente.loop = false;
+            fuente.volume = 1f;
+            fuente.mute = false;
+            fuente.spatialBlend = 0f;
+
+            AudioClip musicaBosque = CargarAudio("Assets/Audio/Music/SoundTrackForest.wav");
+            AudioSource fuenteMusica = ObtenerFuenteMusica(audio);
+            fuenteMusica.clip = musicaBosque;
+            fuenteMusica.playOnAwake = true;
+            fuenteMusica.loop = true;
+            fuenteMusica.volume = 0.35f;
+            fuenteMusica.mute = false;
+            fuenteMusica.spatialBlend = 0f;
+        }
+
+        private static AudioSource ObtenerFuenteMusica(GameObject audio)
+        {
+            AudioSource[] fuentes = audio.GetComponents<AudioSource>();
+            if (fuentes.Length > 1) return fuentes[1];
+            return audio.AddComponent<AudioSource>();
+        }
+
+        private static AudioClip CargarAudio(string ruta)
+        {
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(ruta);
+            if (clip == null) Debug.LogWarning("No se encontro audio: " + ruta);
+            return clip;
         }
 
         private static void CrearDecoracionAndina(int layerSuelo)

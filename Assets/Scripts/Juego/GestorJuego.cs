@@ -68,6 +68,7 @@ namespace JuegoCooperativo.Juego
 
         private void ReiniciarNivel()
         {
+            JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirReinicio();
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }

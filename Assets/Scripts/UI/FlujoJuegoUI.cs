@@ -21,8 +21,8 @@ namespace JuegoCooperativo.UI
         private void Awake()
         {
             Instancia = this;
-            Time.timeScale = 0f;
-            if (panelMenu != null) panelMenu.SetActive(false);
+            juegoIniciado = panelMenu == null || !panelMenu.activeSelf;
+            Time.timeScale = juegoIniciado ? 1f : 0f;
             if (panelPausa != null) panelPausa.SetActive(false);
             if (panelVictoria != null) panelVictoria.SetActive(false);
         }
@@ -44,6 +44,7 @@ namespace JuegoCooperativo.UI
 
             if ((terminado || pausado) && teclado.rKey.wasPressedThisFrame)
             {
+                JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirReinicio();
                 Time.timeScale = 1f;
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
