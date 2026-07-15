@@ -43,6 +43,14 @@ namespace JuegoCooperativo.Personajes
         private bool estabaEnSuelo;
         private float relojCoyote;
         private float relojBufferSalto;
+        private float velocidadBase;
+        private float fuerzaSaltoBase;
+        private float aceleracionAereaBase;
+        private float fuerzaArrastreBase;
+        private float amortiguacionSueloBase;
+        private bool habilidadPotenciada;
+        private Color colorSpriteBase;
+        private readonly Color colorPotenciado = new Color(1f, 0.78f, 0.12f, 1f);
 
         public string NombreJugador => nombreJugador;
         public bool EstaEnSuelo { get; private set; }
@@ -70,10 +78,16 @@ namespace JuegoCooperativo.Personajes
             colision = GetComponent<Collider2D>();
             sprite = GetComponent<SpriteRenderer>();
             animadorAnimal = GetComponent<AnimadorAnimalSierra>();
+            velocidadBase = velocidad;
+            fuerzaSaltoBase = fuerzaSalto;
+            aceleracionAereaBase = aceleracionAerea;
+            fuerzaArrastreBase = fuerzaArrastreCompanero;
+            amortiguacionSueloBase = amortiguacionSuelo;
 
             if (sprite != null)
             {
                 sprite.color = colorJugador;
+                colorSpriteBase = sprite.color;
             }
 
             if (detectorSuelo == null)
@@ -111,6 +125,8 @@ namespace JuegoCooperativo.Personajes
             {
                 sprite.flipX = direccionHorizontal < 0f;
             }
+
+            ActualizarColorPotenciado();
         }
 
         private void FixedUpdate()
@@ -142,12 +158,12 @@ namespace JuegoCooperativo.Personajes
 
         private void Mover()
         {
-            float factorControl = EstaEnSuelo ? 1f : aceleracionAerea;
-            float velocidadObjetivo = direccionHorizontal * velocidad;
+            float factorControl = EstaEnSuelo ? 1f : ObtenerAceleracionAereaActual();
+            float velocidadObjetivo = direccionHorizontal * ObtenerVelocidadActual();
             float nuevaVelocidadX = Mathf.Lerp(cuerpo.linearVelocity.x, velocidadObjetivo, factorControl);
             if (EstaEnSuelo && Mathf.Abs(direccionHorizontal) < 0.01f)
             {
-                nuevaVelocidadX = Mathf.Lerp(cuerpo.linearVelocity.x, 0f, amortiguacionSuelo);
+                nuevaVelocidadX = Mathf.Lerp(cuerpo.linearVelocity.x, 0f, ObtenerAmortiguacionSueloActual());
             }
             cuerpo.linearVelocity = new Vector2(nuevaVelocidadX, cuerpo.linearVelocity.y);
         }
@@ -155,13 +171,73 @@ namespace JuegoCooperativo.Personajes
         private void Saltar()
         {
             cuerpo.linearVelocity = new Vector2(cuerpo.linearVelocity.x, 0f);
-            cuerpo.AddForce(Vector2.up * fuerzaSalto, ForceMode2D.Impulse);
+            cuerpo.AddForce(Vector2.up * ObtenerFuerzaSaltoActual(), ForceMode2D.Impulse);
             JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirSalto(animadorAnimal?.NombreAnimalActual);
         }
 
         public void EmpujarHacia(Vector2 direccion)
         {
-            cuerpo.AddForce(direccion.normalized * fuerzaArrastreCompanero, ForceMode2D.Force);
+            cuerpo.AddForce(direccion.normalized * ObtenerFuerzaArrastreActual(), ForceMode2D.Force);
+        }
+
+        public void ActivarPotenciadorHabilidad()
+        {
+            habilidadPotenciada = true;
+            if (sprite != null)
+            {
+                colorSpriteBase = colorJugador.a > 0f ? colorJugador : sprite.color;
+            }
+        }
+
+        public void DesactivarPotenciadorHabilidad()
+        {
+            habilidadPotenciada = false;
+            if (sprite != null)
+            {
+                sprite.color = colorSpriteBase;
+            }
+        }
+
+        private float ObtenerVelocidadActual()
+        {
+            float multiplicador = habilidadPotenciada ? 1.22f : 1f;
+            if (AnimalActualContiene("alpaca")) return velocidadBase * 1.22f * multiplicador;
+            if (AnimalActualContiene("vicuna") || AnimalActualContiene("vicu")) return velocidadBase * 1.12f * multiplicador;
+            return velocidadBase * multiplicador;
+        }
+
+        private float ObtenerFuerzaSaltoActual()
+        {
+            float multiplicador = habilidadPotenciada ? 1.18f : 1f;
+            if (AnimalActualContiene("condor")) return fuerzaSaltoBase * 1.14f * multiplicador;
+            return fuerzaSaltoBase * multiplicador;
+        }
+
+        private float ObtenerAceleracionAereaActual()
+        {
+            float multiplicador = habilidadPotenciada ? 1.12f : 1f;
+            if (AnimalActualContiene("vicuna") || AnimalActualContiene("vicu")) return aceleracionAereaBase * 1.22f * multiplicador;
+            return aceleracionAereaBase * multiplicador;
+        }
+
+        private float ObtenerFuerzaArrastreActual()
+        {
+            float multiplicador = habilidadPotenciada ? 1.35f : 1f;
+            if (AnimalActualContiene("llama")) return fuerzaArrastreBase * 1.45f * multiplicador;
+            return fuerzaArrastreBase * multiplicador;
+        }
+
+        private float ObtenerAmortiguacionSueloActual()
+        {
+            float multiplicador = habilidadPotenciada ? 1.35f : 1f;
+            if (AnimalActualContiene("vizcacha")) return amortiguacionSueloBase * 1.9f * multiplicador;
+            return amortiguacionSueloBase * multiplicador;
+        }
+
+        private bool AnimalActualContiene(string texto)
+        {
+            string nombre = animadorAnimal != null ? animadorAnimal.NombreAnimalActual : string.Empty;
+            return nombre.ToLowerInvariant().Contains(texto);
         }
 
         public void Teletransportar(Vector3 posicion)
@@ -170,6 +246,14 @@ namespace JuegoCooperativo.Personajes
             cuerpo.linearVelocity = Vector2.zero;
             cuerpo.angularVelocity = 0f;
             SoltarAgarre();
+        }
+
+        private void ActualizarColorPotenciado()
+        {
+            if (sprite == null || !habilidadPotenciada) return;
+
+            float t = Mathf.PingPong(Time.time * 9f, 1f);
+            sprite.color = Color.Lerp(colorSpriteBase, colorPotenciado, t);
         }
 
         private void CambiarAgarre()

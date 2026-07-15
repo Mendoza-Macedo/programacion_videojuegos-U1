@@ -101,8 +101,17 @@ namespace JuegoCooperativo.Juego
 
         public void ReaparecerJugadores()
         {
-            if (jugadorUno != null) jugadorUno.Teletransportar(puntoReaparicionUno);
-            if (jugadorDos != null) jugadorDos.Teletransportar(puntoReaparicionDos);
+            if (jugadorUno != null)
+            {
+                jugadorUno.DesactivarPotenciadorHabilidad();
+                jugadorUno.Teletransportar(puntoReaparicionUno);
+            }
+
+            if (jugadorDos != null)
+            {
+                jugadorDos.DesactivarPotenciadorHabilidad();
+                jugadorDos.Teletransportar(puntoReaparicionDos);
+            }
 
             MostrarMensajeTemporal("Vuelvan a intentarlo");
             JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirDano();

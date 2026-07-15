@@ -27,11 +27,27 @@ namespace JuegoCooperativo.Animales
         private SpriteRenderer render;
         private float relojAnimacion;
         private int cuadroCaminar;
+        private Sprite ultimoSpriteValido;
 
         public int CantidadAnimales => animalesDisponibles == null ? 0 : animalesDisponibles.Length;
         public int IndiceAnimalActual => indiceAnimalActual;
         public string NombreAnimalActual => ObtenerAnimalActual()?.nombreAnimal ?? "Sin animal";
+        public string HabilidadAnimalActual => ObtenerHabilidadAnimal(NombreAnimalActual);
+        public string EtiquetaAnimalActual => $"{NombreAnimalActual} - {HabilidadAnimalActual}";
         public Sprite SpriteVistaPrevia => ObtenerAnimalActual()?.quieto;
+
+        public static string ObtenerHabilidadAnimal(string nombreAnimal)
+        {
+            string nombre = (nombreAnimal ?? string.Empty).ToLowerInvariant();
+
+            if (nombre.Contains("alpaca")) return "Rapidez";
+            if (nombre.Contains("condor")) return "Salto alto";
+            if (nombre.Contains("llama")) return "Empuje fuerte";
+            if (nombre.Contains("vizcacha")) return "No resbala";
+            if (nombre.Contains("vicuna") || nombre.Contains("vicu")) return "Agilidad";
+
+            return "Equilibrado";
+        }
 
         private void Awake()
         {
@@ -52,7 +68,8 @@ namespace JuegoCooperativo.Animales
             indiceAnimalActual = Mathf.Clamp(nuevoIndice, 0, animalesDisponibles.Length - 1);
             if (render == null) render = GetComponent<SpriteRenderer>();
             render.color = Color.white;
-            render.sprite = ObtenerAnimalActual().quieto;
+            render.sprite = ObtenerSpriteSeguro(ObtenerAnimalActual(), ObtenerAnimalActual().quieto);
+            ultimoSpriteValido = render.sprite;
         }
 
         public void CambiarAnimal(int direccion)
@@ -68,22 +85,29 @@ namespace JuegoCooperativo.Animales
             if (animal == null || jugador == null || render == null) return;
 
             Vector2 velocidad = jugador.Cuerpo != null ? jugador.Cuerpo.linearVelocity : Vector2.zero;
+            render.enabled = true;
 
             if (jugador.EstaAgarrado)
             {
-                render.sprite = animal.agarrarse;
+                AsignarSpriteSeguro(animal, animal.agarrarse);
+                return;
+            }
+
+            if (!jugador.EstaEnSuelo && EsCondor(animal))
+            {
+                AsignarSpriteSeguro(animal, animal.quieto);
                 return;
             }
 
             if (!jugador.EstaEnSuelo && velocidad.y > 0.15f)
             {
-                render.sprite = animal.saltar;
+                AsignarSpriteSeguro(animal, animal.saltar);
                 return;
             }
 
             if (!jugador.EstaEnSuelo && velocidad.y < -0.15f)
             {
-                render.sprite = animal.caer;
+                AsignarSpriteSeguro(animal, animal.caer);
                 return;
             }
 
@@ -91,12 +115,43 @@ namespace JuegoCooperativo.Animales
             {
                 relojAnimacion += Time.deltaTime * velocidadAnimacionCaminar;
                 cuadroCaminar = Mathf.FloorToInt(relojAnimacion) % 2;
-                render.sprite = cuadroCaminar == 0 ? animal.caminarUno : animal.caminarDos;
+                AsignarSpriteSeguro(animal, cuadroCaminar == 0 ? animal.caminarUno : animal.caminarDos);
                 return;
             }
 
             relojAnimacion = 0f;
-            render.sprite = animal.quieto;
+            AsignarSpriteSeguro(animal, animal.quieto);
+        }
+
+        private void AsignarSpriteSeguro(AnimalSierra animal, Sprite spritePreferido)
+        {
+            render.sprite = ObtenerSpriteSeguro(animal, spritePreferido);
+            if (render.sprite != null)
+            {
+                ultimoSpriteValido = render.sprite;
+            }
+        }
+
+        private Sprite ObtenerSpriteSeguro(AnimalSierra animal, Sprite spritePreferido)
+        {
+            if (spritePreferido != null && !DebeEvitarSpriteSaltoCondor(animal, spritePreferido)) return spritePreferido;
+            if (animal.quieto != null) return animal.quieto;
+            if (animal.caminarUno != null) return animal.caminarUno;
+            if (animal.caminarDos != null) return animal.caminarDos;
+            return ultimoSpriteValido;
+        }
+
+        private bool DebeEvitarSpriteSaltoCondor(AnimalSierra animal, Sprite spritePreferido)
+        {
+            if (animal == null || spritePreferido != animal.saltar) return false;
+
+            return EsCondor(animal);
+        }
+
+        private bool EsCondor(AnimalSierra animal)
+        {
+            string nombre = (animal?.nombreAnimal ?? string.Empty).ToLowerInvariant();
+            return nombre.Contains("condor");
         }
 
         private AnimalSierra ObtenerAnimalActual()

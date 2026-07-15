@@ -118,7 +118,7 @@ namespace JuegoCooperativo.Animales
 
             if (nombre != null)
             {
-                nombre.text = animador.NombreAnimalActual;
+                nombre.text = animador.EtiquetaAnimalActual;
             }
 
             if (estado != null)
@@ -136,5 +136,4 @@ namespace JuegoCooperativo.Animales
         }
     }
 }
-
 
