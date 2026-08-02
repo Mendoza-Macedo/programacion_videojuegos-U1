@@ -26,6 +26,7 @@ namespace JuegoCooperativo.Audio
         [SerializeField] private AudioClip dano;
         [SerializeField] private AudioClip victoria;
         [SerializeField] private AudioClip reinicio;
+        [SerializeField] private AudioClip portal;
 
         private AudioSource fuente;
         private AudioSource fuenteMusica;
@@ -61,6 +62,7 @@ namespace JuegoCooperativo.Audio
             if (checkpoint == null) checkpoint = CrearTono("Checkpoint", 720f, 0.16f, 0.20f);
             if (dano == null) dano = CrearTono("Dano", 140f, 0.18f, 0.24f);
             if (victoria == null) victoria = CrearTono("Victoria", 880f, 0.28f, 0.22f);
+            if (portal == null) portal = CrearTono("Portal", 1040f, 0.24f, 0.18f);
         }
 
         private void Start()
@@ -76,6 +78,7 @@ namespace JuegoCooperativo.Audio
         public void ReproducirDano() => Reproducir(dano, 0.9f);
         public void ReproducirVictoria() => Reproducir(victoria, 1f);
         public void ReproducirReinicio() => Reproducir(reinicio, 0.9f);
+        public void ReproducirPortal() => Reproducir(portal, 0.95f);
 
         public void ReproducirMusicaPrincipal() => ReproducirMusica(musicaPrincipal);
         public void ReproducirMusicaBosque() => ReproducirMusica(musicaBosque != null ? musicaBosque : musicaPrincipal);

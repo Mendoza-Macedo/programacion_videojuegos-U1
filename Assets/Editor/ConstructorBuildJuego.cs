@@ -10,7 +10,7 @@ namespace JuegoCooperativo.Editor
         [MenuItem("Herramientas/BreadFred/Generar ejecutable Windows")]
         public static void GenerarEjecutableWindows()
         {
-            ConstructorJuegoCompleto.Construir();
+            ConfiguradorCampaniaPortales.ConfigurarCampania();
 
             string carpeta = "Builds/AnimalesDeLaCumbre";
             if (!Directory.Exists(carpeta)) Directory.CreateDirectory(carpeta);
@@ -21,7 +21,7 @@ namespace JuegoCooperativo.Editor
 
             BuildPlayerOptions opciones = new BuildPlayerOptions
             {
-                scenes = new[] { "Assets/Escenas/EscenaCooperativa.unity" },
+                scenes = ConfiguradorCampaniaPortales.EscenasCampania,
                 locationPathName = Path.Combine(carpeta, "AnimalesDeLaCumbre.exe"),
                 target = BuildTarget.StandaloneWindows64,
                 options = BuildOptions.None

@@ -19,3 +19,6 @@
 *.opendb
 *.VC.db
 .DS_Store
+
+# Copia local anidada del mismo repositorio; no forma parte del proyecto.
+/programacion_videojuegos-U1/

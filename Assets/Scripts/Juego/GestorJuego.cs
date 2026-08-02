@@ -17,14 +17,15 @@ namespace JuegoCooperativo.Juego
 
         private float tiempoInicio;
         private bool nivelTerminado;
+        private bool cronometroActivo;
 
         public static GestorJuego Instancia { get; private set; }
 
         private void Awake()
         {
             Instancia = this;
-            Time.timeScale = 1f;
             tiempoInicio = Time.time;
+            cronometroActivo = false;
 
             claveMejorTiempo = "MejorTiempo_" + SceneManager.GetActiveScene().name;
         }
@@ -56,7 +57,7 @@ namespace JuegoCooperativo.Juego
         {
             if (textoEstado == null) return;
 
-            float tiempo = Time.time - tiempoInicio;
+            float tiempo = cronometroActivo ? Time.time - tiempoInicio : 0f;
             float mejor = PlayerPrefs.GetFloat(claveMejorTiempo, 0f);
             string textoMejor = mejor > 0f ? $"Mejor: {mejor:0.0}s" : "Mejor: --";
 
@@ -99,6 +100,18 @@ namespace JuegoCooperativo.Juego
             JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirCheckpoint();
         }
 
+        public void ConfigurarReaparicionInicial(Vector3 centro)
+        {
+            puntoReaparicionUno = centro + Vector3.left * separacionReaparicion;
+            puntoReaparicionDos = centro + Vector3.right * separacionReaparicion;
+        }
+
+        public void ComenzarCronometro()
+        {
+            tiempoInicio = Time.time;
+            cronometroActivo = true;
+        }
+
         public void ReaparecerJugadores()
         {
             if (jugadorUno != null)
@@ -124,7 +137,7 @@ namespace JuegoCooperativo.Juego
 
             nivelTerminado = true;
 
-            float tiempo = Time.time - tiempoInicio;
+            float tiempo = cronometroActivo ? Time.time - tiempoInicio : 0f;
             float mejorTiempo = PlayerPrefs.GetFloat(claveMejorTiempo, 0f);
 
             if (mejorTiempo <= 0f || tiempo < mejorTiempo)

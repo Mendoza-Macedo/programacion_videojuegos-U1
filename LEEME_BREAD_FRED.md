@@ -3,11 +3,13 @@
 Este proyecto fue armado para entender una base jugable de plataformas cooperativas 2D en Unity.
 Todo lo principal esta escrito en español: nombres de carpetas, scripts, variables visibles y objetos de escena.
 
-## Escena principal
-Abre:
-Assets/Escenas/EscenaCooperativa.unity
+## Campaña principal
+La campaña usa, en este orden:
+- Assets/Scenes/Scene1.unity
+- Assets/Scenes/Scene2.unity
+- Assets/Scenes/Scene3.unity hasta Assets/Scenes/Scene8.unity
 
-Tambien esta registrada en Build Settings como escena inicial.
+Scene1 es la escena inicial registrada en Build Settings. El portal rojo indica el lugar de llegada y el portal azul lleva al siguiente nivel cuando ambos jugadores entran. Al superar Scene8 aparece la pantalla de campaña completada.
 
 ## Controles
 Jugador Azul:
@@ -22,6 +24,11 @@ Jugador Rojo:
 
 General:
 - R: reiniciar la escena
+- Esc: pausar o continuar
+- C en el menu inicial: continuar desde el ultimo nivel desbloqueado
+- Enter en el menu inicial: comenzar una campaña nueva
+
+Tambien se admiten dos mandos: stick izquierdo o cruceta para moverse, boton sur para saltar/confirmar y gatillo para agarrarse.
 
 ## Mecanicas incluidas
 - Dos jugadores con Rigidbody2D.
@@ -37,6 +44,9 @@ General:
 - Zona de muerte con reaparicion.
 - Puntos de control.
 - Meta que requiere que ambos jugadores lleguen.
+- Campaña persistente de ocho niveles con portales rojo y azul.
+- Monedas acumuladas entre niveles.
+- Continuar desde el ultimo nivel desbloqueado.
 - UI simple con tiempo e instrucciones.
 - Mejor tiempo guardado con PlayerPrefs.
 - Sonidos generados por codigo para salto, agarre, caida, checkpoint, dano y victoria.
@@ -123,6 +133,13 @@ Incluye:
 - Nivel tutorial y montana extendida.
 - Fondo de montanas andinas, ichu decorativo y cima final.
 - Pantalla de victoria con mejor tiempo.
+
+## Configurar o validar portales
+Para volver a colocar la base cooperativa, los portales y el orden de escenas:
+Herramientas > Animales de la Cumbre > Configurar campaña y portales
+
+Para revisar automaticamente que las ocho escenas posean dos jugadores, ambos portales y un Build Settings correcto:
+Herramientas > Animales de la Cumbre > Validar campaña
 
 ## Ejecutable generado
 El ejecutable Windows esta en:

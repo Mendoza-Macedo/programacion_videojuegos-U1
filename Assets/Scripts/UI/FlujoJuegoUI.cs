@@ -2,6 +2,7 @@
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using JuegoCooperativo.Campania;
 
 namespace JuegoCooperativo.UI
 {
@@ -17,6 +18,7 @@ namespace JuegoCooperativo.UI
         private bool terminado;
 
         public static FlujoJuegoUI Instancia { get; private set; }
+        public bool JuegoIniciado => juegoIniciado;
 
         private void Awake()
         {
@@ -25,24 +27,40 @@ namespace JuegoCooperativo.UI
             Time.timeScale = juegoIniciado ? 1f : 0f;
             if (panelPausa != null) panelPausa.SetActive(false);
             if (panelVictoria != null) panelVictoria.SetActive(false);
+            AgregarAyudaCampania();
         }
 
         private void Update()
         {
             Keyboard teclado = Keyboard.current;
-            if (teclado == null) return;
+            Gamepad mando = Gamepad.current;
+            bool pausar = (teclado != null && teclado.escapeKey.wasPressedThisFrame) ||
+                          (mando != null && mando.startButton.wasPressedThisFrame);
+            bool empezar = (teclado != null && (teclado.enterKey.wasPressedThisFrame || teclado.spaceKey.wasPressedThisFrame)) ||
+                           (mando != null && mando.buttonSouth.wasPressedThisFrame);
+            bool reiniciar = (teclado != null && teclado.rKey.wasPressedThisFrame) ||
+                              (mando != null && mando.selectButton.wasPressedThisFrame);
 
-            if (juegoIniciado && !terminado && teclado.escapeKey.wasPressedThisFrame)
+            if (juegoIniciado && !terminado && pausar)
             {
                 CambiarPausa();
             }
 
-            if (!juegoIniciado && panelMenu != null && panelMenu.activeSelf && (teclado.enterKey.wasPressedThisFrame || teclado.spaceKey.wasPressedThisFrame))
+            if (!juegoIniciado && panelMenu != null && panelMenu.activeSelf && empezar)
             {
+                if (ControlCampania.ExtraerNivel(SceneManager.GetActiveScene().name) == 1)
+                {
+                    EstadoCampania.IniciarNuevaCampania();
+                }
                 IniciarJuego();
             }
 
-            if ((terminado || pausado) && teclado.rKey.wasPressedThisFrame)
+            if (!juegoIniciado && panelMenu != null && panelMenu.activeSelf && teclado != null && teclado.cKey.wasPressedThisFrame)
+            {
+                ControlCampania.Instancia?.ContinuarCampania();
+            }
+
+            if ((terminado || pausado) && reiniciar)
             {
                 JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirReinicio();
                 Time.timeScale = 1f;
@@ -74,6 +92,16 @@ namespace JuegoCooperativo.UI
             if (textoVictoria != null)
             {
                 textoVictoria.text = $"META ALCANZADA\nTiempo: {tiempo:0.0}s\nMejor tiempo: {mejorTiempo:0.0}s\nR: reiniciar";
+            }
+        }
+
+        private void AgregarAyudaCampania()
+        {
+            if (panelMenu == null || ControlCampania.ExtraerNivel(SceneManager.GetActiveScene().name) != 1) return;
+            Text texto = panelMenu.GetComponentInChildren<Text>(true);
+            if (texto != null && !texto.text.Contains("C: continuar"))
+            {
+                texto.text += "\nC: continuar desde el nivel desbloqueado";
             }
         }
     }

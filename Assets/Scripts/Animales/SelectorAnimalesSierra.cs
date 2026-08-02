@@ -1,8 +1,10 @@
 ﻿using JuegoCooperativo.Personajes;
 using JuegoCooperativo.UI;
+using JuegoCooperativo.Campania;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 namespace JuegoCooperativo.Animales
 {
@@ -26,34 +28,68 @@ namespace JuegoCooperativo.Animales
         private bool jugadorUnoListo;
         private bool jugadorDosListo;
         private bool seleccionTerminada;
+        private bool seleccionActiva;
 
         private void Start()
         {
-            ActivarSeleccion();
+            BuscarReferenciasFaltantes();
+            AplicarSeleccionGuardada();
+
+            int nivel = ControlCampania.ExtraerNivel(SceneManager.GetActiveScene().name);
+            if (nivel > 1 && EstadoCampania.HaySeleccion)
+            {
+                TerminarSeleccion(false);
+                return;
+            }
+
+            seleccionTerminada = false;
+            seleccionActiva = false;
+            if (panelSeleccion != null) panelSeleccion.SetActive(false);
+            if (textoSeleccion != null) textoSeleccion.gameObject.SetActive(false);
+            if (jugadorUno != null) jugadorUno.enabled = false;
+            if (jugadorDos != null) jugadorDos.enabled = false;
         }
 
         private void Update()
         {
             if (seleccionTerminada) return;
 
+            if (!seleccionActiva)
+            {
+                if (FlujoJuegoUI.Instancia == null || !FlujoJuegoUI.Instancia.JuegoIniciado) return;
+                ActivarSeleccion();
+                return;
+            }
+
             Keyboard teclado = Keyboard.current;
-            if (teclado == null) return;
+            Gamepad mandoUno = Gamepad.all.Count > 0 ? Gamepad.all[0] : null;
+            Gamepad mandoDos = Gamepad.all.Count > 1 ? Gamepad.all[1] : null;
 
             if (!jugadorUnoListo)
             {
-                if (teclado.aKey.wasPressedThisFrame) animadorUno.CambiarAnimal(-1);
-                if (teclado.dKey.wasPressedThisFrame) animadorUno.CambiarAnimal(1);
-                if (teclado.wKey.wasPressedThisFrame) jugadorUnoListo = true;
+                bool izquierda = teclado != null && teclado.aKey.wasPressedThisFrame;
+                bool derecha = teclado != null && teclado.dKey.wasPressedThisFrame;
+                izquierda |= mandoUno != null && mandoUno.dpad.left.wasPressedThisFrame;
+                derecha |= mandoUno != null && mandoUno.dpad.right.wasPressedThisFrame;
+                if (izquierda && animadorUno != null) animadorUno.CambiarAnimal(-1);
+                if (derecha && animadorUno != null) animadorUno.CambiarAnimal(1);
+                if ((teclado != null && teclado.wKey.wasPressedThisFrame) ||
+                    (mandoUno != null && mandoUno.buttonSouth.wasPressedThisFrame)) jugadorUnoListo = true;
             }
 
             if (!jugadorDosListo)
             {
-                if (teclado.leftArrowKey.wasPressedThisFrame) animadorDos.CambiarAnimal(-1);
-                if (teclado.rightArrowKey.wasPressedThisFrame) animadorDos.CambiarAnimal(1);
-                if (teclado.upArrowKey.wasPressedThisFrame) jugadorDosListo = true;
+                bool izquierda = teclado != null && teclado.leftArrowKey.wasPressedThisFrame;
+                bool derecha = teclado != null && teclado.rightArrowKey.wasPressedThisFrame;
+                izquierda |= mandoDos != null && mandoDos.dpad.left.wasPressedThisFrame;
+                derecha |= mandoDos != null && mandoDos.dpad.right.wasPressedThisFrame;
+                if (izquierda && animadorDos != null) animadorDos.CambiarAnimal(-1);
+                if (derecha && animadorDos != null) animadorDos.CambiarAnimal(1);
+                if ((teclado != null && teclado.upArrowKey.wasPressedThisFrame) ||
+                    (mandoDos != null && mandoDos.buttonSouth.wasPressedThisFrame)) jugadorDosListo = true;
             }
 
-            if (teclado.enterKey.wasPressedThisFrame || teclado.numpadEnterKey.wasPressedThisFrame)
+            if (teclado != null && (teclado.enterKey.wasPressedThisFrame || teclado.numpadEnterKey.wasPressedThisFrame))
             {
                 jugadorUnoListo = true;
                 jugadorDosListo = true;
@@ -63,12 +99,13 @@ namespace JuegoCooperativo.Animales
 
             if (jugadorUnoListo && jugadorDosListo)
             {
-                TerminarSeleccion();
+                TerminarSeleccion(true);
             }
         }
 
         private void ActivarSeleccion()
         {
+            seleccionActiva = true;
             seleccionTerminada = false;
             jugadorUnoListo = false;
             jugadorDosListo = false;
@@ -81,15 +118,42 @@ namespace JuegoCooperativo.Animales
             ActualizarTexto();
         }
 
-        private void TerminarSeleccion()
+        private void TerminarSeleccion(bool guardar)
         {
             seleccionTerminada = true;
+            seleccionActiva = false;
+
+            if (guardar && animadorUno != null && animadorDos != null)
+            {
+                EstadoCampania.GuardarSeleccion(animadorUno.IndiceAnimalActual, animadorDos.IndiceAnimalActual);
+            }
 
             if (jugadorUno != null) jugadorUno.enabled = true;
             if (jugadorDos != null) jugadorDos.enabled = true;
             if (textoSeleccion != null) textoSeleccion.gameObject.SetActive(false);
             if (panelSeleccion != null) panelSeleccion.SetActive(false);
             FlujoJuegoUI.Instancia?.IniciarJuego();
+            JuegoCooperativo.Juego.GestorJuego.Instancia?.ComenzarCronometro();
+        }
+
+        private void AplicarSeleccionGuardada()
+        {
+            if (!EstadoCampania.HaySeleccion) return;
+            animadorUno?.AplicarAnimal(EstadoCampania.AnimalUno);
+            animadorDos?.AplicarAnimal(EstadoCampania.AnimalDos);
+        }
+
+        private void BuscarReferenciasFaltantes()
+        {
+            JugadorCooperativo[] jugadores = FindObjectsByType<JugadorCooperativo>(FindObjectsSortMode.None);
+            foreach (JugadorCooperativo jugador in jugadores)
+            {
+                bool esAzul = jugador.NombreJugador.ToLowerInvariant().Contains("azul");
+                if (esAzul && jugadorUno == null) jugadorUno = jugador;
+                if (!esAzul && jugadorDos == null) jugadorDos = jugador;
+            }
+            if (animadorUno == null && jugadorUno != null) animadorUno = jugadorUno.GetComponent<AnimadorAnimalSierra>();
+            if (animadorDos == null && jugadorDos != null) animadorDos = jugadorDos.GetComponent<AnimadorAnimalSierra>();
         }
 
         private void ActualizarTexto()

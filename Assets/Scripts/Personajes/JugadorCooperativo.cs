@@ -2,6 +2,7 @@
 using UnityEngine.InputSystem;
 using TMPro;
 using JuegoCooperativo.Animales;
+using JuegoCooperativo.Campania;
 
 namespace JuegoCooperativo.Personajes
 {
@@ -59,17 +60,15 @@ namespace JuegoCooperativo.Personajes
 
 
 
-        private static int coins;
         public TMP_Text TextCoins;
         private void OnTriggerEnter2D(Collider2D collision)
         {
             if (collision.CompareTag("Coin"))
             {
+                collision.gameObject.SetActive(false);
+                int monedas = EstadoCampania.RegistrarMoneda();
+                if (TextCoins != null) TextCoins.text = monedas.ToString();
                 Destroy(collision.gameObject);
-
-                coins++;
-
-                TextCoins.text = coins.ToString();
             }
         }
         private void Awake()
@@ -83,6 +82,7 @@ namespace JuegoCooperativo.Personajes
             aceleracionAereaBase = aceleracionAerea;
             fuerzaArrastreBase = fuerzaArrastreCompanero;
             amortiguacionSueloBase = amortiguacionSuelo;
+            if (TextCoins != null) TextCoins.text = EstadoCampania.Monedas.ToString();
 
             if (sprite != null)
             {
@@ -102,21 +102,27 @@ namespace JuegoCooperativo.Personajes
         private void Update()
         {
             Keyboard teclado = Keyboard.current;
-            if (teclado == null)
-            {
-                return;
-            }
+            int indiceMando = nombreJugador.ToLowerInvariant().Contains("azul") ? 0 : 1;
+            Gamepad mando = Gamepad.all.Count > indiceMando ? Gamepad.all[indiceMando] : null;
 
             direccionHorizontal = 0f;
-            if (teclado[teclaIzquierda].isPressed) direccionHorizontal -= 1f;
-            if (teclado[teclaDerecha].isPressed) direccionHorizontal += 1f;
+            if (teclado != null && teclado[teclaIzquierda].isPressed) direccionHorizontal -= 1f;
+            if (teclado != null && teclado[teclaDerecha].isPressed) direccionHorizontal += 1f;
+            if (mando != null)
+            {
+                float entradaMando = mando.leftStick.x.ReadValue();
+                if (Mathf.Abs(entradaMando) < 0.15f) entradaMando = mando.dpad.x.ReadValue();
+                if (Mathf.Abs(entradaMando) > Mathf.Abs(direccionHorizontal)) direccionHorizontal = entradaMando;
+            }
 
-            if (teclado[teclaSalto].wasPressedThisFrame)
+            if ((teclado != null && teclado[teclaSalto].wasPressedThisFrame) ||
+                (mando != null && mando.buttonSouth.wasPressedThisFrame))
             {
                 relojBufferSalto = tiempoBufferSalto;
             }
 
-            if (teclado[teclaAgarrar].wasPressedThisFrame)
+            if ((teclado != null && teclado[teclaAgarrar].wasPressedThisFrame) ||
+                (mando != null && mando.rightShoulder.wasPressedThisFrame))
             {
                 CambiarAgarre();
             }
