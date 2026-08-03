@@ -152,7 +152,7 @@ namespace JuegoCooperativo.Personajes
         private void RevisarSuelo()
         {
             estabaEnSuelo = EstaEnSuelo;
-            EstaEnSuelo = Physics2D.OverlapCircle(detectorSuelo.position, radioDetectorSuelo, capaSuelo);
+            EstaEnSuelo = Physics2D.OverlapCircle(detectorSuelo.position, radioDetectorSuelo, capaSuelo) || EstaSobreCompanero();
             relojCoyote = EstaEnSuelo ? tiempoCoyote : relojCoyote - Time.fixedDeltaTime;
 
             if (!estabaEnSuelo && EstaEnSuelo)
@@ -160,6 +160,23 @@ namespace JuegoCooperativo.Personajes
                 cuerpo.linearVelocity = new Vector2(cuerpo.linearVelocity.x, Mathf.Max(cuerpo.linearVelocity.y, -1f));
                 JuegoCooperativo.Audio.SonidosJuego.Instancia?.ReproducirAterrizaje();
             }
+        }
+
+        private bool EstaSobreCompanero()
+        {
+            Collider2D[] contactos = Physics2D.OverlapCircleAll(detectorSuelo.position, radioDetectorSuelo);
+            foreach (Collider2D contacto in contactos)
+            {
+                if (contacto == null || contacto == colision || contacto.isTrigger) continue;
+
+                JugadorCooperativo posibleCompanero = contacto.GetComponentInParent<JugadorCooperativo>();
+                if (posibleCompanero != null && posibleCompanero != this)
+                {
+                    return transform.position.y > posibleCompanero.transform.position.y;
+                }
+            }
+
+            return false;
         }
 
         private void Mover()

@@ -14,7 +14,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8653719598885068355, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_Name
-      value: skeleton
+      value: Esqueleto Patrulla
       objectReference: {fileID: 0}
     - target: {fileID: -8120287603404390966, guid: a3779e50bc9323e41946f7b5517235c6, type: 3}
       propertyPath: m_LocalScale.x
