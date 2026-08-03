@@ -86,8 +86,8 @@ namespace JuegoCooperativo.Personajes
 
             if (sprite != null)
             {
-                sprite.color = colorJugador;
-                colorSpriteBase = sprite.color;
+                sprite.color = Color.white;
+                colorSpriteBase = Color.white;
             }
 
             if (detectorSuelo == null)
@@ -191,7 +191,7 @@ namespace JuegoCooperativo.Personajes
             habilidadPotenciada = true;
             if (sprite != null)
             {
-                colorSpriteBase = colorJugador.a > 0f ? colorJugador : sprite.color;
+                colorSpriteBase = Color.white;
             }
         }
 
@@ -200,7 +200,8 @@ namespace JuegoCooperativo.Personajes
             habilidadPotenciada = false;
             if (sprite != null)
             {
-                sprite.color = colorSpriteBase;
+                colorSpriteBase = Color.white;
+                sprite.color = Color.white;
             }
         }
 
